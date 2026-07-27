@@ -21,7 +21,7 @@ const generateToken = (user) => {
   return jwt.sign(
     { id: user.user_id, phone: user.phone, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
+    { expiresIn: process.env.JWT_EXPIRES_IN || "1d" }
   );
 };
 
@@ -100,6 +100,7 @@ const login = asyncHandler(async (req, res) => {
   );
 
   if (users.length === 0) {
+    console.log(`[Login Failed] Phone number not found: ${phone}`);
     throw createError("Invalid phone number or password.", 401);
   }
 
@@ -108,6 +109,7 @@ const login = asyncHandler(async (req, res) => {
   // Compare submitted password with stored hash
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
+    console.log(`[Login Failed] Invalid password for phone: ${phone}`);
     throw createError("Invalid phone number or password.", 401);
   }
 

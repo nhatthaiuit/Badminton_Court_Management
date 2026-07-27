@@ -146,6 +146,6 @@ router.put("/:id", authenticate, authorize("admin", "owner"), courtValidation, c
  *       404:
  *         description: Court not found
  */
-router.delete("/:id", authenticate, authorize("admin"), courtController.deleteCourt);
+router.delete("/:id", authenticate, authorize("admin", "owner"), courtController.deleteCourt);
 
 module.exports = router;
