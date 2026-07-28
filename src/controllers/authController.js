@@ -10,7 +10,6 @@ const { validationResult } = require("express-validator");
 const pool = require("../config/database");
 const { asyncHandler, successResponse, createError } = require("../utils/helpers");
 const crypto = require("crypto");
-const nodemailer = require("nodemailer");
 
 /**
  * Generate a signed JWT token for an authenticated user.
@@ -143,15 +142,6 @@ const getProfile = asyncHandler(async (req, res) => {
   res.json(successResponse("Profile retrieved", users[0]));
 });
 
-// Configure nodemailer transporter
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
 const forgotPassword = asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -182,13 +172,12 @@ const forgotPassword = asyncHandler(async (req, res) => {
     [hashedToken, tokenExpiry, user.user_id]
   );
 
-  // Send Email
+  // Send Email using Google Apps Script Web App
   const resetUrl = `${process.env.CORS_ORIGIN}/reset-password?token=${resetToken}`;
-  const mailOptions = {
-    from: `"BCMS Support" <${process.env.EMAIL_USER}>`,
+  const emailPayload = {
     to: user.email,
-    subject: "Password Reset Request",
-    html: `
+    subject: "Password Reset Request - BCMS",
+    htmlBody: `
       <h3>Hello ${user.full_name},</h3>
       <p>You requested a password reset for your BCMS account.</p>
       <p>Please click the link below to reset your password. This link is valid for 10 minutes.</p>
@@ -198,10 +187,31 @@ const forgotPassword = asyncHandler(async (req, res) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    if (!process.env.GAS_EMAIL_URL) {
+      throw new Error("GAS_EMAIL_URL is not defined in environment variables");
+    }
+    const gasResponse = await fetch(process.env.GAS_EMAIL_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(emailPayload),
+    });
+    
+    // Some GAS endpoints return text with redirects, JSON is best handled carefully
+    const responseText = await gasResponse.text();
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Failed to parse GAS response as JSON:", responseText);
+      throw new Error("Invalid response from GAS Web App");
+    }
+
+    if (!result.success) {
+      throw new Error(result.error || "GAS Web App returned false success");
+    }
     res.json(successResponse("Password reset link sent to your email."));
   } catch (error) {
-    console.error("Email send error:", error);
+    console.error("Email send error via GAS:", error);
     // Remove token if email failed
     await pool.query(
       "UPDATE users SET reset_token = NULL, reset_token_expiry = NULL WHERE user_id = ?",
