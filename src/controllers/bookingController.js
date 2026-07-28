@@ -131,9 +131,16 @@ const createBooking = asyncHandler(async (req, res) => {
     note,
   } = req.body;
 
-  // ── PREVENT PAST BOOKINGS \u0026 INVALID TIME ───────────────────────────────────
+  // ── PREVENT PAST BOOKINGS & INVALID TIME ───────────────────────────────────
   if (start_time >= end_time) {
     return res.status(400).json({ success: false, message: "End time must be after start time." });
+  }
+
+  // ── PREVENT BOOKINGS < 1 HOUR ──────────────────────────────────────────────
+  const startTimeObj = new Date(`1970-01-01T${start_time}`);
+  const endTimeObj = new Date(`1970-01-01T${end_time}`);
+  if ((endTimeObj - startTimeObj) / 60000 < 60) {
+    return res.status(400).json({ success: false, message: "Booking duration must be at least 1 hour." });
   }
 
   // Get current time in Vietnam (UTC+7)
