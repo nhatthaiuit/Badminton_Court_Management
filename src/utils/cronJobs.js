@@ -50,17 +50,23 @@ const startCronJobs = (io) => {
   // Runs every 1 minute
   setInterval(async () => {
     try {
+      // Lấy giờ Việt Nam (UTC+7)
+      const now = new Date();
+      const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+      const currentDate = vnTime.toISOString().split('T')[0];
+      const currentTime = vnTime.toISOString().split('T')[1].substring(0, 8);
+
       const query = `
         SELECT booking_id 
         FROM bookings 
         WHERE status = 'confirmed' 
           AND (
-            booking_date < CURDATE() 
-            OR (booking_date = CURDATE() AND end_time <= CURTIME())
+            booking_date < ? 
+            OR (booking_date = ? AND end_time <= ?)
           )
       `;
       
-      const [expiredBookings] = await pool.query(query);
+      const [expiredBookings] = await pool.query(query, [currentDate, currentDate, currentTime]);
 
       if (expiredBookings.length > 0) {
         const bookingIds = expiredBookings.map(b => b.booking_id);
