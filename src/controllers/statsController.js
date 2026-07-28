@@ -26,8 +26,8 @@ const getOverview = asyncHandler(async (req, res) => {
     // Count of today's bookings by status
     pool.query(
       `SELECT 
-         COUNT(*) AS total,
-         COALESCE(SUM(status = 'confirmed'), 0) AS confirmed,
+         COALESCE(SUM(customer_name != 'Maintenance Block' AND (note IS NULL OR note NOT LIKE '[MAINTENANCE]%')), 0) AS total,
+         COALESCE(SUM(status = 'confirmed' AND customer_name != 'Maintenance Block' AND (note IS NULL OR note NOT LIKE '[MAINTENANCE]%')), 0) AS confirmed,
          COALESCE(SUM(status = 'pending'), 0)   AS pending,
          COALESCE(SUM(status = 'cancelled'), 0) AS cancelled,
          COALESCE(SUM(status = 'completed'), 0) AS completed
