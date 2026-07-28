@@ -143,7 +143,7 @@ const createUser = asyncHandler(async (req, res) => {
  */
 const updateUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { full_name, email, phone, password } = req.body;
+  const { full_name, email, phone, password, role } = req.body;
   const currentRole = req.user.role;
 
   const [existing] = await pool.query(
@@ -192,6 +192,25 @@ const updateUser = asyncHandler(async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 12);
     updateFields.push("password = ?"); 
     updateValues.push(hashedPassword); 
+  }
+  if (role && role !== targetRole) {
+    let hasRoleChangePermission = false;
+    if (currentRole === "admin") {
+      hasRoleChangePermission = true;
+    } else if (currentRole === "owner") {
+      if (["staff", "customer"].includes(targetRole) && ["staff", "customer"].includes(role)) {
+        hasRoleChangePermission = true;
+      }
+    }
+    if (!hasRoleChangePermission) {
+      throw createError(`Role '${currentRole}' is not authorized to change role to '${role}'.`, 403);
+    }
+    const validRoles = ["admin", "staff", "owner", "customer"];
+    if (!validRoles.includes(role)) {
+      throw createError(`Invalid role.`, 400);
+    }
+    updateFields.push("role = ?");
+    updateValues.push(role);
   }
 
   if (updateFields.length > 0) {
