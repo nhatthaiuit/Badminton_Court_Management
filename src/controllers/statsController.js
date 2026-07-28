@@ -27,12 +27,11 @@ const getOverview = asyncHandler(async (req, res) => {
     pool.query(
       `SELECT 
          COALESCE(SUM(
-            NOT (customer_name = 'Maintenance Block' OR note LIKE '[MAINTENANCE]%') 
-            AND status != 'cancelled'
+            NOT (customer_name = 'Maintenance Block' OR note LIKE '[MAINTENANCE]%')
          ), 0) AS total,
          COALESCE(SUM(
             NOT (customer_name = 'Maintenance Block' OR note LIKE '[MAINTENANCE]%') 
-            AND status = 'confirmed'
+            AND status IN ('confirmed', 'completed')
          ), 0) AS confirmed,
          COALESCE(SUM(status = 'pending'), 0)   AS pending,
          COALESCE(SUM(status = 'cancelled'), 0) AS cancelled,
