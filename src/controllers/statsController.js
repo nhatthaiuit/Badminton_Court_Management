@@ -27,10 +27,10 @@ const getOverview = asyncHandler(async (req, res) => {
     pool.query(
       `SELECT 
          COUNT(*) AS total,
-         SUM(status = 'confirmed') AS confirmed,
-         SUM(status = 'pending')   AS pending,
-         SUM(status = 'cancelled') AS cancelled,
-         SUM(status = 'completed') AS completed
+         COALESCE(SUM(status = 'confirmed'), 0) AS confirmed,
+         COALESCE(SUM(status = 'pending'), 0)   AS pending,
+         COALESCE(SUM(status = 'cancelled'), 0) AS cancelled,
+         COALESCE(SUM(status = 'completed'), 0) AS completed
        FROM bookings
        WHERE booking_date = ?`,
       [today]
