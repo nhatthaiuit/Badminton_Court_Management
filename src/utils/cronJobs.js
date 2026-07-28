@@ -46,6 +46,41 @@ const startCronJobs = (io) => {
     }
   }, 60000); // 60,000 ms = 1 minute
 
+  // 2. Auto-complete confirmed bookings that have passed their end time
+  // Runs every 1 minute
+  setInterval(async () => {
+    try {
+      const query = `
+        SELECT booking_id 
+        FROM bookings 
+        WHERE status = 'confirmed' 
+          AND (
+            booking_date < CURDATE() 
+            OR (booking_date = CURDATE() AND end_time <= CURTIME())
+          )
+      `;
+      
+      const [expiredBookings] = await pool.query(query);
+
+      if (expiredBookings.length > 0) {
+        const bookingIds = expiredBookings.map(b => b.booking_id);
+        
+        await pool.query(
+          `UPDATE bookings SET status = 'completed' WHERE booking_id IN (?)`,
+          [bookingIds]
+        );
+
+        console.log(`[Cron] Auto-completed ${expiredBookings.length} past booking(s): ${bookingIds.join(', ')}`);
+
+        if (io) {
+          io.emit("schedule_updated");
+        }
+      }
+    } catch (error) {
+      console.error("[Cron Error] Auto-complete bookings failed:", error);
+    }
+  }, 60000); // 60,000 ms = 1 minute
+
   console.log("⏰ Cron jobs initialized.");
 };
 
