@@ -112,6 +112,12 @@ const login = asyncHandler(async (req, res) => {
     throw createError("Invalid phone number or password.", 401);
   }
 
+  // Check if account is active
+  if (user.status === 'inactive') {
+    console.log(`[Login Failed] Account is inactive: ${phone}`);
+    throw createError("Your account has been deactivated. Please contact support.", 403);
+  }
+
   // Generate JWT token
   const token = generateToken(user);
 

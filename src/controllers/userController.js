@@ -14,7 +14,7 @@ const { asyncHandler, successResponse, createError } = require("../utils/helpers
  */
 const getAllUsers = asyncHandler(async (req, res) => {
   const [users] = await pool.query(
-    "SELECT user_id, full_name, email, phone, role, created_at FROM users ORDER BY created_at DESC"
+    "SELECT user_id, full_name, email, phone, role, status, created_at FROM users ORDER BY created_at DESC"
   );
   res.json(successResponse("Users retrieved", users, { total: users.length }));
 });
@@ -28,7 +28,7 @@ const getUserById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const [users] = await pool.query(
-    "SELECT user_id, full_name, phone, role, created_at FROM users WHERE user_id = ?",
+    "SELECT user_id, full_name, email, phone, role, status, created_at FROM users WHERE user_id = ?",
     [id]
   );
 
@@ -129,7 +129,7 @@ const createUser = asyncHandler(async (req, res) => {
   );
 
   const [newUser] = await pool.query(
-    "SELECT user_id, full_name, email, phone, role, created_at FROM users WHERE user_id = ?",
+    "SELECT user_id, full_name, email, phone, role, status, created_at FROM users WHERE user_id = ?",
     [result.insertId]
   );
 
@@ -143,7 +143,7 @@ const createUser = asyncHandler(async (req, res) => {
  */
 const updateUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { full_name, email, phone, password, role } = req.body;
+  const { full_name, email, phone, password, role, status } = req.body;
   const currentRole = req.user.role;
 
   const [existing] = await pool.query(
@@ -212,6 +212,13 @@ const updateUser = asyncHandler(async (req, res) => {
     updateFields.push("role = ?");
     updateValues.push(role);
   }
+  if (status) {
+    if (!['active', 'inactive'].includes(status)) {
+      throw createError(`Invalid status.`, 400);
+    }
+    updateFields.push("status = ?");
+    updateValues.push(status);
+  }
 
   if (updateFields.length > 0) {
     updateValues.push(id);
@@ -222,7 +229,7 @@ const updateUser = asyncHandler(async (req, res) => {
   }
 
   const [updatedUser] = await pool.query(
-    "SELECT user_id, full_name, email, phone, role, created_at FROM users WHERE user_id = ?",
+    "SELECT user_id, full_name, email, phone, role, status, created_at FROM users WHERE user_id = ?",
     [id]
   );
 
