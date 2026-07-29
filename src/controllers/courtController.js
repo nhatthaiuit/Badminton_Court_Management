@@ -98,7 +98,7 @@ const updateCourt = asyncHandler(async (req, res) => {
   const params = [];
 
   // Prevent deactivating if there are upcoming active bookings
-  if (status && status !== 'active' && existing[0].status === 'active') {
+  if (status && status !== 'available' && existing[0].status === 'available') {
     const [upcomingBookings] = await pool.query(
       "SELECT booking_id FROM bookings WHERE court_id = ? AND status IN ('pending', 'confirmed') AND (booking_date > CURDATE() OR (booking_date = CURDATE() AND start_time >= CURTIME()))",
       [id]
