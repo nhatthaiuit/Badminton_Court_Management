@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
   email      VARCHAR(100) NOT NULL,
   password   VARCHAR(255) NOT NULL,             -- bcrypt-hashed
   role       ENUM('admin', 'staff', 'owner', 'customer') NOT NULL DEFAULT 'customer',
+  status     ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
   reset_token VARCHAR(255) NULL,
   reset_token_expiry DATETIME NULL,
   created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
