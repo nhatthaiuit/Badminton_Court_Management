@@ -87,10 +87,6 @@ const resetPasswordValidation = [
  *               password:
  *                 type: string
  *                 example: "password123"
- *               role:
- *                 type: string
- *                 enum: [admin, staff, owner]
- *                 default: staff
  *     responses:
  *       201:
  *         description: User registered successfully
